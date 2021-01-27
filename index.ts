@@ -73,6 +73,7 @@ export class MoveUpCommand implements Command {
   }
 
   execute() {
+    this.previousKey = pressKey.currentKey;
     this.pressKey.moveUp();
   }
 
@@ -90,6 +91,7 @@ export class MoveDownCommand implements Command {
   }
 
   execute() {
+    this.previousKey = pressKey.currentKey;
     this.pressKey.moveDown();
   }
 
@@ -100,7 +102,7 @@ export class MoveDownCommand implements Command {
 
 export class KeyBoard {
   private doCommands: Map<KEYS, Command> = new Map();
-  private undoCommand: Command;
+  private currentCommand: Command;
 
   constructor() {
     this.initCommands();
@@ -121,11 +123,11 @@ export class KeyBoard {
 
   onKeyPressed(key: KEYS) {
     this.doCommands.get(key).execute();
-    this.undoCommand = this.doCommands.get(key);
+    this.currentCommand = this.doCommands.get(key);
   }
 
   undoKeyPressed() {
-    const prevKey = this.undoCommand.undo();
+    const prevKey = this.currentCommand.undo();
     console.log(`Undoing...returning to key ${prevKey}`);
     this.doCommands.get(prevKey).execute();
   }
@@ -156,5 +158,6 @@ keyboard.onKeyPressed(KEYS.ARROW_UP);
 keyboard.onKeyPressed(KEYS.ARROW_LEFT);
 keyboard.undoKeyPressed();
 
+keyboard.onKeyPressed(KEYS.ARROW_LEFT);
 keyboard.onKeyPressed(KEYS.ARROW_DOWN);
 keyboard.undoKeyPressed();
