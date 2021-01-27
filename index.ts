@@ -2,61 +2,72 @@ export enum KEYS {
   ARROW_UP,
   ARROW_DOWN,
   ARROW_LEFT,
-  ARROW_RIGHT
+  ARROW_RIGHT,
+  NO_KEY
 }
 
 export interface Command {
   execute(): void;
-  undo(): void;
+  undo(): KEYS;
 }
 
 export class PressKey {
+  private _currentKey: KEYS = KEYS.NO_KEY;
+
   moveUp() {
+    this._currentKey = KEYS.ARROW_UP;
     console.log("Key UP Pressed");
   }
 
   moveDown() {
+    this._currentKey = KEYS.ARROW_DOWN;
     console.log("Key DOWN Pressed");
   }
 
   moveLeft() {
+    this._currentKey = KEYS.ARROW_LEFT;
     console.log("Key LEFT Pressed");
   }
 
   moveRight() {
+    this._currentKey = KEYS.ARROW_RIGHT;
     console.log("Key RIGHT Pressed");
+  }
+
+  get currentKey(): KEYS {
+    return this._currentKey;
   }
 }
 
 export class NoCommand implements Command {
   execute() {}
-  undo() {}
-  toString() {
-    return "No Command";
+  undo() {
+    return KEYS.NO_KEY;
   }
 }
 
 export class MoveLeftCommand implements Command {
   private pressKey: PressKey;
+  private previousKey: KEYS;
+
   constructor(pressKey: PressKey) {
     this.pressKey = pressKey;
   }
 
   execute() {
+    this.previousKey = pressKey.currentKey;
     this.pressKey.moveLeft();
   }
 
-  undo() {
-    this.pressKey.moveRight();
-  }
-
-  toString() {
-    return "KEY LEFT";
+  undo(): KEYS {
+    return this.previousKey;
   }
 }
 
 export class MoveUpCommand implements Command {
   private pressKey: PressKey;
+  private previousKey: KEYS;
+
   constructor(pressKey: PressKey) {
     this.pressKey = pressKey;
   }
@@ -65,17 +76,15 @@ export class MoveUpCommand implements Command {
     this.pressKey.moveUp();
   }
 
-  undo() {
-    this.pressKey.moveDown();
-  }
-
-  toString() {
-    return "KEY UP";
+  undo(): KEYS {
+    return this.previousKey;
   }
 }
 
 export class MoveDownCommand implements Command {
   private pressKey: PressKey;
+  private previousKey: KEYS;
+
   constructor(pressKey: PressKey) {
     this.pressKey = pressKey;
   }
@@ -84,12 +93,8 @@ export class MoveDownCommand implements Command {
     this.pressKey.moveDown();
   }
 
-  undo() {
-    this.pressKey.moveUp();
-  }
-
-  toString() {
-    return "KEY DOWN";
+  undo(): KEYS {
+    return this.previousKey;
   }
 }
 
@@ -107,6 +112,7 @@ export class KeyBoard {
     this.doCommands.set(KEYS.ARROW_DOWN, noCommand);
     this.doCommands.set(KEYS.ARROW_LEFT, noCommand);
     this.doCommands.set(KEYS.ARROW_RIGHT, noCommand);
+    this.doCommands.set(KEYS.NO_KEY, noCommand);
   }
 
   setCommand(key: KEYS, doCommand: Command) {
@@ -119,8 +125,9 @@ export class KeyBoard {
   }
 
   undoKeyPressed() {
-    console.log(`Undoing ${this.undoCommand.toString()}`);
-    this.undoCommand.undo();
+    const prevKey = this.undoCommand.undo();
+    console.log(`Undoing...returning to key ${prevKey}`);
+    this.doCommands.get(prevKey).execute();
   }
 
   toString() {
@@ -134,7 +141,7 @@ export class KeyBoard {
 
 const pressKey: PressKey = new PressKey();
 const moveUpCommand: Command = new MoveUpCommand(pressKey);
-const moveDownCommand: Command = new MoveUpCommand(pressKey);
+const moveDownCommand: Command = new MoveDownCommand(pressKey);
 const moveLeftCommand: Command = new MoveLeftCommand(pressKey);
 
 const keyboard = new KeyBoard();
@@ -146,4 +153,8 @@ keyboard.setCommand(KEYS.ARROW_LEFT, moveLeftCommand);
 keyboard.toString();
 
 keyboard.onKeyPressed(KEYS.ARROW_UP);
+keyboard.onKeyPressed(KEYS.ARROW_LEFT);
+keyboard.undoKeyPressed();
+
+keyboard.onKeyPressed(KEYS.ARROW_DOWN);
 keyboard.undoKeyPressed();
